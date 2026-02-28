@@ -230,7 +230,7 @@ function timeToMs(str) {
 // =============================================
 
 async function cargarHistorial(myUid, friendUid, friendColor) {
-  const dias = ultimosDias(6);
+  const dias = ultimosDias(10);
 
   const fetches = dias.map(fecha => Promise.all([
     getDoc(doc(db, 'results', `${myUid}_${fecha}`)),
