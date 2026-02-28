@@ -140,7 +140,7 @@ function abrirReto(friendUid, friendName) {
   document.getElementById('challengeView').style.display  = 'block';
   document.getElementById('headerTitle').textContent      = `Reto con ${friendName}`;
 
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = fechaHoy();
   document.getElementById('todayDateLabel').textContent   = formatFecha(hoy);
 
   cargarReto(auth.currentUser.uid, friendUid);
@@ -159,7 +159,7 @@ function volverAlMain() {
 // =============================================
 
 async function cargarReto(myUid, friendUid) {
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = fechaHoy();
 
   const [mySnap, friendSnap, friendProfileSnap] = await Promise.all([
     getDoc(doc(db, 'results', `${myUid}_${hoy}`)),
@@ -172,7 +172,7 @@ async function cargarReto(myUid, friendUid) {
   const friendColor = friendProfileSnap.exists() ? (friendProfileSnap.data().color || COLORES[0]) : COLORES[0];
 
   renderJuegosBotones(myData, friendData, friendColor);
-  await cargarHistorial(myUid, friendUid);
+  await cargarHistorial(myUid, friendUid, friendColor);
 }
 
 function renderJuegosBotones(myData, friendData, friendColor) {
@@ -229,8 +229,8 @@ function timeToMs(str) {
 // FIRESTORE — Vista de reto: historial 7 días
 // =============================================
 
-async function cargarHistorial(myUid, friendUid) {
-  const dias = ultimosDias(7);
+async function cargarHistorial(myUid, friendUid, friendColor) {
+  const dias = ultimosDias(6);
 
   const fetches = dias.map(fecha => Promise.all([
     getDoc(doc(db, 'results', `${myUid}_${fecha}`)),
@@ -238,50 +238,59 @@ async function cargarHistorial(myUid, friendUid) {
   ]));
   const resultados = await Promise.all(fetches);
 
-  const conDatos = resultados
-    .map(([mySnap, friendSnap], i) => ({
-      fecha:      dias[i],
-      myData:     mySnap.exists()     ? mySnap.data()     : null,
-      friendData: friendSnap.exists() ? friendSnap.data() : null,
-    }))
-    .filter(({ myData, friendData }) => myData || friendData);
+  const entries = resultados.map(([mySnap, friendSnap], i) => ({
+    diasAtras:  i + 1,
+    myData:     mySnap.exists()     ? mySnap.data()     : null,
+    friendData: friendSnap.exists() ? friendSnap.data() : null,
+  }));
 
-  renderHistorial(conDatos);
+  renderHistorial(entries, friendColor);
 }
 
-function renderHistorial(dias) {
-  const lista = document.getElementById('historyList');
+function diaRelativo(diasAtras) {
+  if (diasAtras === 1) return 'Ayer';
+  return `Hace ${diasAtras} días`;
+}
 
-  if (dias.length === 0) {
+function colorCuadrado(myVal, friendVal, friendColor) {
+  const hayYo    = myVal     !== null;
+  const hayRival = friendVal !== null;
+  if (!hayYo && !hayRival) return '#e0e0e0';       // ninguno jugó → gris
+  if ( hayYo && !hayRival) return myColor;          // solo yo jugué
+  if (!hayYo &&  hayRival) return friendColor;      // solo rival jugó
+  // Ambos jugaron
+  const diff = timeToMs(myVal) - timeToMs(friendVal);
+  if (diff === 0) return '#e0e0e0';                 // empate → gris
+  return diff < 0 ? myColor : friendColor;
+}
+
+function renderHistorial(entries, friendColor) {
+  const lista = document.getElementById('historyList');
+  lista.innerHTML = '';
+
+  if (entries.length === 0) {
     lista.innerHTML = '<p class="empty-msg">Sin resultados anteriores.</p>';
     return;
   }
 
-  lista.innerHTML = '';
-  for (const { fecha, myData, friendData } of dias) {
-    const item = document.createElement('div');
-    item.className = 'history-day';
+  for (const { diasAtras, myData, friendData } of entries) {
+    const row = document.createElement('div');
+    row.className = 'history-row';
 
-    const pillsHtml = JUEGOS.map(juego => {
+    const squaresHtml = JUEGOS.map(juego => {
       const myVal     = myData?.[juego.id]     ?? null;
       const friendVal = friendData?.[juego.id] ?? null;
-      if (!myVal && !friendVal) return '';
-
-      let clase = '';
-      if (myVal && friendVal) {
-        clase = timeToMs(myVal) <= timeToMs(friendVal) ? 'win' : 'lose';
-      }
-      const texto = myVal && friendVal
-        ? `${juego.label}: ${myVal} vs ${friendVal}`
-        : `${juego.label}: ${myVal ?? '—'} / ${friendVal ?? 'Pendiente'}`;
-
-      return `<span class="pill ${clase}">${texto}</span>`;
+      const color     = colorCuadrado(myVal, friendVal, friendColor);
+      const myLabel     = myVal     ?? '—';
+      const friendLabel = friendVal ?? '—';
+      const title = `${juego.label}: ${myLabel} vs ${friendLabel}`;
+      return `<div class="history-square" style="background:${color}" title="${title}"></div>`;
     }).join('');
 
-    item.innerHTML = `
-      <span class="history-date">${formatFecha(fecha)}</span>
-      <div class="history-pills">${pillsHtml || '<span class="pill">Sin actividad</span>'}</div>`;
-    lista.appendChild(item);
+    row.innerHTML = `
+      <span class="history-date">${diaRelativo(diasAtras)}</span>
+      <div class="history-squares">${squaresHtml}</div>`;
+    lista.appendChild(row);
   }
 }
 
@@ -289,8 +298,13 @@ function ultimosDias(n) {
   return Array.from({ length: n }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (i + 1));
-    return d.toISOString().split('T')[0];
+    return d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
   });
+}
+
+// Fecha actual en zona horaria de Madrid (devuelve YYYY-MM-DD)
+function fechaHoy() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
 }
 
 function formatFecha(dateStr) {
@@ -623,7 +637,7 @@ async function guardar(campos) {
   const user = auth.currentUser;
   if (!user) { console.warn('guardar: sin usuario autenticado'); return; }
 
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = fechaHoy();
   await setDoc(doc(db, 'results', `${user.uid}_${hoy}`), campos, { merge: true });
 
   if (currentFriend) await cargarReto(user.uid, currentFriend.uid);
