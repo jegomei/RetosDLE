@@ -125,7 +125,7 @@ function mostrarLogin() {
   document.getElementById('loginScreen').style.display  = 'flex';
   document.getElementById('appContainer').style.display = 'none';
   cerrarJuego();
-  volverAlMain();
+  volverAlMain(false); // conservar el hash para redirigir tras el login
 }
 
 
@@ -133,7 +133,7 @@ function mostrarLogin() {
 // NAVEGACIÓN — Vista principal ↔ Vista de reto
 // =============================================
 
-function abrirReto(friendUid, friendName) {
+function abrirReto(friendUid, friendName, updateHash = true) {
   currentFriend = { uid: friendUid, name: friendName };
 
   document.getElementById('mainView').style.display       = 'none';
@@ -143,14 +143,29 @@ function abrirReto(friendUid, friendName) {
   const hoy = fechaHoy();
   document.getElementById('todayDateLabel').textContent   = formatFecha(hoy);
 
+  if (updateHash) location.hash = 'reto/' + friendUid;
+
   cargarReto(auth.currentUser.uid, friendUid);
 }
 
-function volverAlMain() {
+function volverAlMain(updateHash = true) {
   currentFriend = null;
   document.getElementById('challengeView').style.display  = 'none';
   document.getElementById('mainView').style.display       = 'block';
   document.getElementById('headerTitle').textContent      = '';
+  if (updateHash) history.replaceState(null, '', location.pathname);
+}
+
+// Navega al reto indicado en el hash de la URL (#reto/{uid})
+async function navegarDesdeHash() {
+  const hash = location.hash;                   // '#reto/abc123...'
+  if (!hash.startsWith('#reto/')) return;
+  const friendUid = hash.slice(6);              // '#reto/' = 6 chars
+  if (!friendUid) return;
+  const snap = await getDoc(doc(db, 'users', friendUid));
+  if (!snap.exists()) return;                   // uid no válido → queda en main
+  const name = snap.data().nickname || snap.data().displayName;
+  abrirReto(friendUid, name, false);            // false: no modificar el hash
 }
 
 
@@ -345,6 +360,7 @@ async function crearPerfilSiNoExiste(user) {
   }
 
   await cargarPerfil(user.uid);
+  await navegarDesdeHash();
 }
 
 async function cargarPerfil(uid) {
@@ -708,3 +724,18 @@ document.getElementById('friendsList').addEventListener('click', (e) => {
 
 // ⚠️ DEV ONLY
 document.getElementById('btnCrearFake').addEventListener('click', crearAmigoFicticio);
+
+// Hash routing — botón atrás/adelante del navegador
+window.addEventListener('hashchange', async () => {
+  if (!auth.currentUser) return;           // sin sesión, no hacer nada
+  const hash = location.hash;
+  if (hash.startsWith('#reto/')) {
+    const friendUid = hash.slice(6);
+    const snap = await getDoc(doc(db, 'users', friendUid));
+    if (!snap.exists()) { volverAlMain(false); return; }
+    const name = snap.data().nickname || snap.data().displayName;
+    abrirReto(friendUid, name, false);     // false: hash ya es correcto
+  } else {
+    volverAlMain(false);                   // false: hash ya está vacío
+  }
+});
