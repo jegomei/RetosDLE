@@ -424,13 +424,14 @@ async function renderAmigos(amigos) {
   for (const uid of amigos) {
     const snap = await getDoc(doc(db, 'users', uid));
     if (!snap.exists()) continue;
-    const { displayName } = snap.data();
+    const data        = snap.data();
+    const friendName  = data.nickname || data.displayName;
 
     const item = document.createElement('div');
     item.className = 'friend-item';
     item.innerHTML = `
-      <span class="friend-name">${displayName}</span>
-      <button class="btn btn-sm btn-success retar-btn" data-uid="${uid}" data-name="${displayName}">
+      <span class="friend-name">${friendName}</span>
+      <button class="btn btn-sm btn-success retar-btn" data-uid="${uid}" data-name="${friendName}">
         Retar
       </button>`;
     lista.appendChild(item);
