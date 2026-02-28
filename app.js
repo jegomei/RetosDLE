@@ -213,6 +213,9 @@ function renderJuegosBotones(myData, friendData, friendColor) {
 
 function timeToMs(str) {
   if (!str) return Infinity;
+  // Entero puro (ej. Cuordle: número de intentos — menor es mejor)
+  if (/^\d+$/.test(str)) return parseInt(str);
+  // Tiempo MM:SS o MM:SS.cc
   const m = str.match(/^(\d+):(\d+)(?:\.(\d+))?$/);
   if (!m) return Infinity;
   const mins = parseInt(m[1]);
@@ -589,7 +592,15 @@ async function leerResultado() {
       }
     }
 
-    // --- CUORDLE --- (parser pendiente)
+    // --- CUORDLE ---
+    if (texto.includes('Cuordle') && texto.includes('Total:')) {
+      const match = texto.match(/Total:\s*(\d+)/);
+      if (match) {
+        await guardar({ cuordle: match[1] });
+        mostrar(`Cuordle → ${match[1]} intentos ✓`);
+        return;
+      }
+    }
 
     mostrar('No se reconoce el formato del texto copiado.', true);
 
