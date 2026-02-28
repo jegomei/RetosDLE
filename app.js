@@ -529,34 +529,6 @@ async function añadirAmigo() {
 }
 
 
-// =============================================
-// ⚠️ DEV ONLY — borrar antes de producción
-// =============================================
-
-async function crearAmigoFicticio() {
-  const btn = document.getElementById('btnCrearFake');
-  const msg = document.getElementById('devMsg');
-  btn.disabled = true;
-
-  const fakeUid  = 'fake_' + Date.now();
-  const names    = ['Carlos Test', 'María Test', 'Jugador Bot', 'Rival Demo'];
-  const fakeName = names[Math.floor(Math.random() * names.length)];
-  const fakeCode = 'TEST' + String(Math.floor(Math.random() * 100)).padStart(2, '0');
-
-  await setDoc(doc(db, 'users', fakeUid), {
-    uid:         fakeUid,
-    displayName: fakeName,
-    nickname:    fakeName,
-    color:       COLORES[Math.floor(Math.random() * COLORES.length)],
-    friendCode:  fakeCode,
-    friends:     [],
-  });
-
-  msg.textContent = `✓ Creado: ${fakeName} | Código: ${fakeCode}`;
-  btn.disabled = false;
-}
-
-// /DEV ONLY
 
 function copiarCodigo() {
   const code = document.getElementById('friendCodeDisplay').textContent;
@@ -721,9 +693,6 @@ document.getElementById('friendsList').addEventListener('click', (e) => {
   if (!btn) return;
   abrirReto(btn.dataset.uid, btn.dataset.name);
 });
-
-// ⚠️ DEV ONLY
-document.getElementById('btnCrearFake').addEventListener('click', crearAmigoFicticio);
 
 // Hash routing — botón atrás/adelante del navegador
 window.addEventListener('hashchange', async () => {

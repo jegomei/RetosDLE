@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Retos Diarios</title>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -87,20 +87,10 @@
 
               <!-- Código de amigo -->
               <span class="card-label">Tu código de amigo</span>
-              <div class="code-display" style="margin-top:6px; margin-bottom:16px;">
+              <div class="code-display" style="margin-top:6px; margin-bottom:4px;">
                 <strong id="friendCodeDisplay">······</strong>
                 <button class="btn btn-sm" id="btnCopyCode">Copiar</button>
               </div>
-
-              <!-- Añadir amigo -->
-              <span class="card-label">Añadir amigo</span>
-              <div class="input-row" style="margin-top:6px;">
-                <input type="text" id="friendCodeInput"
-                       placeholder="Código (6 caracteres)"
-                       maxlength="6" autocomplete="off" spellcheck="false">
-                <button class="btn btn-sm" id="btnAddFriend">Añadir</button>
-              </div>
-              <p id="addFriendMsg" class="form-msg"></p>
 
               <div class="profile-divider"></div>
 
@@ -112,30 +102,35 @@
             </div><!-- /#profileContent -->
           </div><!-- /#profileCard -->
 
-          <!-- Lista de amigos -->
+          <!-- Lista de amigos + añadir amigo -->
           <div class="card">
             <span class="card-label">Amigos</span>
             <div id="friendsList">
               <p class="empty-msg">Cargando...</p>
             </div>
-          </div>
-
-          <!-- ⚠️ DEV ONLY — borrar antes de producción -->
-          <div class="card" id="devCard" style="border: 2px dashed #f9a825; background:#fffde7;">
-            <span class="card-label" style="color:#f9a825;">⚠️ Dev Tools</span>
-            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn btn-sm" id="btnCrearFake" style="background:#f9a825; color:#333; width:auto;">
-                Crear amigo ficticio
-              </button>
-              <span id="devMsg" style="font-size:13px; color:#555; align-self:center;"></span>
+            <div class="profile-divider" style="margin-top:12px;"></div>
+            <span class="card-label">Añadir amigo</span>
+            <div class="input-row" style="margin-top:6px;">
+              <input type="text" id="friendCodeInput"
+                     placeholder="Código (6 caracteres)"
+                     maxlength="6" autocomplete="off" spellcheck="false">
+              <button class="btn btn-sm" id="btnAddFriend">Añadir</button>
             </div>
+            <p id="addFriendMsg" class="form-msg"></p>
           </div>
-          <!-- /DEV ONLY -->
 
         </section>
 
         <!-- Portapapeles (vista principal) -->
         <button class="btn btn-success" id="btnLeer">📋 Añadir resultados copiados</button>
+
+        <p class="how-to">
+          Comparte tu <strong>código de amigo</strong> (en tu perfil) →
+          pide a tu amigo que te añada con él →
+          pulsa <strong>Retar</strong> →
+          juega los retos del día →
+          copia el resultado y pulsa <strong>Añadir resultados copiados</strong>
+        </p>
 
       </main>
     </div><!-- /#mainView -->
