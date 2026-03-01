@@ -139,7 +139,7 @@ onAuthStateChanged(auth, (user) => {
 function mostrarApp(user) {
   document.getElementById('loginScreen').style.display  = 'none';
   document.getElementById('appContainer').style.display = 'block';
-  document.getElementById('headerTitle').textContent    = 'Retos Diarios';
+  document.getElementById('headerTitle').textContent    = 'Rivaldia';
   crearPerfilSiNoExiste(user);
 }
 
@@ -174,7 +174,7 @@ function volverAlMain(updateHash = true) {
   currentFriend = null;
   document.getElementById('challengeView').style.display  = 'none';
   document.getElementById('mainView').style.display       = 'block';
-  document.getElementById('headerTitle').textContent      = 'Retos Diarios';
+  document.getElementById('headerTitle').textContent      = 'Rivaldia';
   if (updateHash) history.replaceState(null, '', location.pathname);
 }
 
