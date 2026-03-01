@@ -647,17 +647,27 @@ iframe {
 
 .stat-meter {
   flex: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
 .stat-side {
-  flex: 1;
   display: flex;
   gap: 3px;
   min-height: 26px;
   align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Los cuadros dentro de stat-side se reparten el espacio igual (ancho adaptable) */
+.stat-side .history-square {
+  flex: 1;
+  width: auto;
+  min-width: 0;
 }
 
 .stat-side-left  { justify-content: flex-end; }
