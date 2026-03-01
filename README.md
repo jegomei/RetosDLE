@@ -8,7 +8,7 @@
 
 ## 📸 Capturas
 
-![Capturas de la app](screenshots/rivaldia.PNG)
+![Capturas de la app](screenshots/rivaldia.png)
 
 ---
 
