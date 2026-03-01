@@ -8,6 +8,31 @@
 }
 
 /* =============================================
+   SPLASH SCREEN
+   ============================================= */
+#splashScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+}
+
+#splashScreen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#splashIcon {
+  width: 160px;
+  height: 160px;
+  border-radius: 32px;
+}
+
+/* =============================================
    GLOBALES
    ============================================= */
 *, *::before, *::after {

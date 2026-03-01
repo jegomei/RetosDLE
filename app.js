@@ -145,7 +145,15 @@ function mostrarApp(user) {
   crearPerfilSiNoExiste(user);
 }
 
+function hideSplash() {
+  const el = document.getElementById('splashScreen');
+  if (!el) return;
+  el.classList.add('fade-out');
+  el.addEventListener('transitionend', () => el.remove(), { once: true });
+}
+
 function mostrarLogin() {
+  hideSplash();
   document.getElementById('loginScreen').style.display  = 'flex';
   document.getElementById('appContainer').style.display = 'none';
   cerrarJuego();
@@ -713,6 +721,7 @@ async function crearPerfilSiNoExiste(user) {
       abrirReto(favoriteUid, name, false);
     }
   }
+  hideSplash();
 }
 
 async function cargarPerfil(uid) {
