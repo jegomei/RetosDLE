@@ -505,15 +505,30 @@ iframe {
 
 .juego-btn {
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border: none;
   border-radius: 10px;
   font-family: inherit;
   text-align: left;
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  transition: filter 0.15s;
+}
+
+.juego-btn-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.juego-btn-text {
+  display: flex;
   flex-direction: column;
   gap: 3px;
-  transition: filter 0.15s;
 }
 
 .juego-btn-name {
@@ -584,6 +599,18 @@ iframe {
   height: 26px;
   border-radius: 6px;
   background: #e0e0e0;
+}
+
+.history-legend {
+  border-bottom: 2px solid #eeeeee !important;
+  padding-bottom: 6px !important;
+}
+
+.history-legend-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  object-fit: contain;
 }
 
 /* =============================================

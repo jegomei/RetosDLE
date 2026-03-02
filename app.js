@@ -38,11 +38,11 @@ const db = getFirestore(firebaseApp);
 // CONFIG — Juegos (fuente de verdad única)
 // =============================================
 const JUEGOS = [
-  { id: 'sumplete',       label: 'Sumplete',       url: 'https://sumplete.com/daily' },
-  { id: 'shikaku_easy',   label: 'Shikaku Easy',   url: 'https://shikakuofthe.day/' },
-  { id: 'shikaku_medium', label: 'Shikaku Medium',  url: 'https://shikakuofthe.day/' },
-  { id: 'cinco',          label: 'Cinco',           url: 'https://embed.puzzlepass.io/eyJwbGF5ZXJJZCI6IktkR2ZjZ0xURElBSVY5cE42MUpuIiwidXNlcklkIjoiYWx2YXJvaXJlZ3VpOTJAZ21haWwuY29tIiwibGFuZ3VhZ2UiOiJlbiJ9?language=en' },
-  { id: 'cuordle',        label: 'Cuordle',         url: 'https://jegomei.github.io/Cuardle/' },
+  { id: 'sumplete',       label: 'Sumplete',       icon: 'icons/sumplete.png', url: 'https://sumplete.com/daily' },
+  { id: 'shikaku_easy',   label: 'Shikaku Easy',   icon: 'icons/shikaku.png',  url: 'https://shikakuofthe.day/' },
+  { id: 'shikaku_medium', label: 'Shikaku Medium',  icon: 'icons/shikaku.png',  url: 'https://shikakuofthe.day/' },
+  { id: 'cinco',          label: 'Cinco',           icon: 'icons/cinco.png',    url: 'https://embed.puzzlepass.io/eyJwbGF5ZXJJZCI6IktkR2ZjZ0xURElBSVY5cE42MUpuIiwidXNlcklkIjoiYWx2YXJvaXJlZ3VpOTJAZ21haWwuY29tIiwibGFuZ3VhZ2UiOiJlbiJ9?language=en' },
+  { id: 'cuordle',        label: 'Cuordle',         icon: 'icons/cuordle.ico',  url: 'https://jegomei.github.io/Cuardle/' },
 ];
 
 const COLORES = [
@@ -259,16 +259,22 @@ function renderJuegosBotones(myData, friendData, friendColor) {
     const btn = document.createElement('button');
     btn.className = 'juego-btn';
 
+    const iconHtml = `<img class="juego-btn-icon" src="${juego.icon}" alt="">`;
+
     if (myVal === null) {
       btn.classList.add('juego-btn--unplayed');
-      btn.innerHTML = `<span class="juego-btn-name">${juego.label}</span>
-                       <span class="juego-btn-status">Toca para jugar →</span>`;
+      btn.innerHTML = `${iconHtml}<div class="juego-btn-text">
+                         <span class="juego-btn-name">${juego.label}</span>
+                         <span class="juego-btn-status">Toca para jugar →</span>
+                       </div>`;
       btn.addEventListener('click', () => abrirJuego(juego.label, juego.url));
 
     } else if (rawFriend === null) {
       btn.classList.add('juego-btn--waiting');
-      btn.innerHTML = `<span class="juego-btn-name">${juego.label}</span>
-                       <span class="juego-btn-status">Tú: ${myVal} · Esperando rival…</span>`;
+      btn.innerHTML = `${iconHtml}<div class="juego-btn-text">
+                         <span class="juego-btn-name">${juego.label}</span>
+                         <span class="juego-btn-status">Tú: ${myVal} · Esperando rival…</span>
+                       </div>`;
 
     } else {
       const iWin        = timeToMs(myVal) <= timeToMs(rawFriend);
@@ -276,8 +282,10 @@ function renderJuegosBotones(myData, friendData, friendColor) {
       btn.classList.add('juego-btn--result');
       btn.style.background = winnerColor;
       const label = iWin ? '🏆 Ganaste' : 'Perdiste';
-      btn.innerHTML = `<span class="juego-btn-name">${juego.label}</span>
-                       <span class="juego-btn-status">${label} · Tú: ${myVal} · Rival: ${rawFriend}</span>`;
+      btn.innerHTML = `${iconHtml}<div class="juego-btn-text">
+                         <span class="juego-btn-name">${juego.label}</span>
+                         <span class="juego-btn-status">${label} · Tú: ${myVal} · Rival: ${rawFriend}</span>
+                       </div>`;
     }
 
     container.appendChild(btn);
@@ -345,6 +353,16 @@ function renderHistorial(entries, friendColor) {
     lista.innerHTML = '<p class="empty-msg">Sin resultados anteriores.</p>';
     return;
   }
+
+  // Fila leyenda: icono de cada juego alineado sobre sus cuadrados
+  const legend = document.createElement('div');
+  legend.className = 'history-row history-legend';
+  legend.innerHTML = `
+    <span class="history-date"></span>
+    <div class="history-squares">
+      ${JUEGOS.map(j => `<img class="history-legend-icon" src="${j.icon}" alt="${j.label}" title="${j.label}">`).join('')}
+    </div>`;
+  lista.appendChild(legend);
 
   for (const { diasAtras, myData, friendData } of entries) {
     const row = document.createElement('div');
