@@ -620,10 +620,13 @@ function renderStatCards(dataByDay) {
       // Borde de la tarjeta del color del ganador
       card.style.border = `2px solid ${winnerColor}`;
 
-      for (let i = 0; i < numSquares; i++) {
+      for (let i = 0; i < 5; i++) {
         const sq = document.createElement('div');
-        sq.className        = 'history-square';
-        sq.style.background = winnerColor;
+        sq.className = 'history-square';
+        // Left side: transparent squares go first (outer), colored near divider
+        // Right side: colored squares go first (near divider), transparent outer
+        const colored = winner === 'a' ? i >= (5 - numSquares) : i < numSquares;
+        sq.style.background = colored ? winnerColor : 'transparent';
         targetSide.appendChild(sq);
       }
     }
