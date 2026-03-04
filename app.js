@@ -719,7 +719,7 @@ function formatRecord(val, juegoId) {
   if (!m) return val;
   const totalSecs = parseInt(m[1]) * 60 + parseInt(m[2]);
   const cents = m[3] ? parseInt(m[3].padEnd(2, '0')) : 0;
-  return (totalSecs + cents / 100).toFixed(2) + 's';
+  return (totalSecs + cents / 100).toFixed(2) + ' s';
 }
 
 // Escanea todo el historial de un uid y devuelve el objeto de récords plano
