@@ -245,7 +245,8 @@ async function cargarReto(myUid, friendUid) {
 
   renderJuegosBotones(myData, friendData, friendColor);
   await cargarHistorial(myUid, friendUid, friendColor);
-  cargarMeses(myUid, friendUid); // sin await: carga en paralelo con la UI ya visible
+  cargarMeses(myUid, friendUid);    // sin await: carga en paralelo con la UI ya visible
+  cargarRecords(myUid, friendUid);  // sin await: ídem
 }
 
 function renderJuegosBotones(myData, friendData, friendColor) {
@@ -697,6 +698,89 @@ async function cargarMeses(myUid, friendUid) {
     item.innerHTML = `<span class="month-name">${NOMBRES_MES[month - 1]} ${year}</span>
       <button class="btn btn-sm" data-year="${year}" data-month="${month}">Ver estadísticas</button>`;
     lista.appendChild(item);
+  }
+}
+
+async function cargarRecords(myUid, friendUid) {
+  const lista = document.getElementById('recordsList');
+  lista.innerHTML = '<p class="empty-msg">Cargando…</p>';
+
+  const queryPorUid = (uid) => query(
+    collection(db, 'results'),
+    orderBy(documentId()),
+    startAt(uid + '_'),
+    endAt(uid + '_\uf8ff'),
+  );
+  const [myDocs, friendDocs] = await Promise.all([
+    getDocs(queryPorUid(myUid)),
+    getDocs(queryPorUid(friendUid)),
+  ]);
+
+  const currentMonth = fechaHoy().slice(0, 7); // 'YYYY-MM'
+
+  const records = {};
+  for (const juego of JUEGOS) records[juego.id] = { mes: null, abs: null };
+
+  const processDoc = (snap, isMe) => {
+    const underscoreIdx = snap.id.indexOf('_');
+    const date = underscoreIdx !== -1 ? snap.id.slice(underscoreIdx + 1) : null;
+    if (!date) return;
+    const data = snap.data();
+
+    for (const juego of JUEGOS) {
+      const val = data[juego.id] ?? null;
+      if (!val) continue;
+      const ms = timeToMs(val);
+      if (ms === Infinity) continue;
+
+      const curAbs = records[juego.id].abs;
+      if (!curAbs || ms < timeToMs(curAbs.val)) records[juego.id].abs = { val, isMe };
+
+      if (date.startsWith(currentMonth)) {
+        const curMes = records[juego.id].mes;
+        if (!curMes || ms < timeToMs(curMes.val)) records[juego.id].mes = { val, isMe };
+      }
+    }
+  };
+
+  myDocs.docs.forEach(snap => processDoc(snap, true));
+  friendDocs.docs.forEach(snap => processDoc(snap, false));
+
+  renderRecords(records);
+}
+
+function renderRecords(records) {
+  const lista = document.getElementById('recordsList');
+  lista.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'record-row record-header';
+  header.innerHTML = `
+    <div class="record-game"></div>
+    <span class="record-col-label">Mes</span>
+    <span class="record-col-label">Total</span>`;
+  lista.appendChild(header);
+
+  for (const juego of JUEGOS) {
+    const rec = records[juego.id];
+    const row = document.createElement('div');
+    row.className = 'record-row';
+
+    const fmt = (r) => {
+      if (!r) return '—';
+      return juego.id === 'cuordle' ? r.val + ' int.' : r.val;
+    };
+    const mesColor = rec.mes ? (rec.mes.isMe ? myColor : currentFriendColor) : '#ccc';
+    const absColor = rec.abs ? (rec.abs.isMe ? myColor : currentFriendColor) : '#ccc';
+
+    row.innerHTML = `
+      <div class="record-game">
+        <img class="history-legend-icon" src="${juego.icon}" alt="${juego.label}">
+        <span class="record-game-name">${juego.label}</span>
+      </div>
+      <span class="record-val" style="color:${mesColor}">${fmt(rec.mes)}</span>
+      <span class="record-val" style="color:${absColor}">${fmt(rec.abs)}</span>`;
+    lista.appendChild(row);
   }
 }
 

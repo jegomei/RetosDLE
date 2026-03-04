@@ -6,7 +6,7 @@
 //    La PWA se actualizará sola la próxima vez que se abra.
 // ═══════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'rivaldia-v5';
+const CACHE_VERSION = 'rivaldia-v6';
 
 // Archivos que se pre-cachean al instalar el SW
 const ASSETS = [
