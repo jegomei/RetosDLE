@@ -711,11 +711,15 @@ function mejorEntre(myVal, friendVal) {
     : { val: friendVal, isMe: false };
 }
 
-// Formatea un valor de récord para mostrar: MM:SS (sin centésimas), o "X int." para Cuordle
+// Formatea un valor de récord: SS.cc"s" (segundos totales con centésimas), o "X int." para Cuordle
 function formatRecord(val, juegoId) {
   if (!val) return '—';
   if (juegoId === 'cuordle') return val + ' int.';
-  return val.replace(/\.\d+$/, ''); // eliminar centésimas si las hay
+  const m = val.match(/^(\d+):(\d+)(?:\.(\d+))?$/);
+  if (!m) return val;
+  const totalSecs = parseInt(m[1]) * 60 + parseInt(m[2]);
+  const cents = m[3] ? parseInt(m[3].padEnd(2, '0')) : 0;
+  return (totalSecs + cents / 100).toFixed(2) + 's';
 }
 
 // Escanea todo el historial de un uid y devuelve el objeto de récords plano
