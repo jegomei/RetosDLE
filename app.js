@@ -701,50 +701,89 @@ async function cargarMeses(myUid, friendUid) {
   }
 }
 
-async function cargarRecords(myUid, friendUid) {
-  const lista = document.getElementById('recordsList');
-  lista.innerHTML = '<p class="empty-msg">Cargando…</p>';
+// Devuelve { val, isMe } con el mejor de dos valores, o null si ninguno existe
+function mejorEntre(myVal, friendVal) {
+  if (!myVal && !friendVal) return null;
+  if (myVal && !friendVal)  return { val: myVal,    isMe: true  };
+  if (!myVal && friendVal)  return { val: friendVal, isMe: false };
+  return timeToMs(myVal) <= timeToMs(friendVal)
+    ? { val: myVal,    isMe: true  }
+    : { val: friendVal, isMe: false };
+}
 
-  const queryPorUid = (uid) => query(
+// Formatea un valor de récord para mostrar: MM:SS (sin centésimas), o "X int." para Cuordle
+function formatRecord(val, juegoId) {
+  if (!val) return '—';
+  if (juegoId === 'cuordle') return val + ' int.';
+  return val.replace(/\.\d+$/, ''); // eliminar centésimas si las hay
+}
+
+// Escanea todo el historial de un uid y devuelve el objeto de récords plano
+async function construirRecordsDesdeHistorial(uid) {
+  const snap = await getDocs(query(
     collection(db, 'results'),
     orderBy(documentId()),
     startAt(uid + '_'),
     endAt(uid + '_\uf8ff'),
-  );
-  const [myDocs, friendDocs] = await Promise.all([
-    getDocs(queryPorUid(myUid)),
-    getDocs(queryPorUid(friendUid)),
-  ]);
-
-  const currentMonth = fechaHoy().slice(0, 7); // 'YYYY-MM'
-
-  const records = {};
-  for (const juego of JUEGOS) records[juego.id] = { mes: null, abs: null };
-
-  const processDoc = (snap, isMe) => {
-    const underscoreIdx = snap.id.indexOf('_');
-    const date = underscoreIdx !== -1 ? snap.id.slice(underscoreIdx + 1) : null;
+  ));
+  const recData = {};
+  snap.forEach(docSnap => {
+    const underscoreIdx = docSnap.id.indexOf('_');
+    const date = underscoreIdx !== -1 ? docSnap.id.slice(underscoreIdx + 1) : null;
     if (!date) return;
-    const data = snap.data();
-
+    const mes = date.slice(0, 7);
+    const data = docSnap.data();
     for (const juego of JUEGOS) {
       const val = data[juego.id] ?? null;
       if (!val) continue;
       const ms = timeToMs(val);
       if (ms === Infinity) continue;
-
-      const curAbs = records[juego.id].abs;
-      if (!curAbs || ms < timeToMs(curAbs.val)) records[juego.id].abs = { val, isMe };
-
-      if (date.startsWith(currentMonth)) {
-        const curMes = records[juego.id].mes;
-        if (!curMes || ms < timeToMs(curMes.val)) records[juego.id].mes = { val, isMe };
-      }
+      const allTimeKey = juego.id + '_allTime';
+      if (!recData[allTimeKey] || ms < timeToMs(recData[allTimeKey])) recData[allTimeKey] = val;
+      const mesKey = juego.id + '_' + mes;
+      if (!recData[mesKey] || ms < timeToMs(recData[mesKey])) recData[mesKey] = val;
     }
-  };
+  });
+  return recData;
+}
 
-  myDocs.docs.forEach(snap => processDoc(snap, true));
-  friendDocs.docs.forEach(snap => processDoc(snap, false));
+async function cargarRecords(myUid, friendUid) {
+  const lista = document.getElementById('recordsList');
+  lista.innerHTML = '<p class="empty-msg">Cargando…</p>';
+
+  const [myRecSnap, friendRecSnap] = await Promise.all([
+    getDoc(doc(db, 'records', myUid)),
+    getDoc(doc(db, 'records', friendUid)),
+  ]);
+
+  // Si no existe el doc propio → escaneo completo + guardar para futuras cargas
+  let myRecData;
+  if (myRecSnap.exists()) {
+    myRecData = myRecSnap.data();
+  } else {
+    myRecData = await construirRecordsDesdeHistorial(myUid);
+    if (Object.keys(myRecData).length > 0) {
+      setDoc(doc(db, 'records', myUid), myRecData); // fire-and-forget: migración inicial
+    }
+  }
+
+  // Si no existe el doc del amigo → escaneo completo (no podemos guardarlo por él)
+  let friendRecData;
+  if (friendRecSnap.exists()) {
+    friendRecData = friendRecSnap.data();
+  } else {
+    friendRecData = await construirRecordsDesdeHistorial(friendUid);
+  }
+
+  const currentMonth = fechaHoy().slice(0, 7);
+  const records = {};
+  for (const juego of JUEGOS) {
+    const mesKey = juego.id + '_' + currentMonth;
+    records[juego.id] = {
+      mes: mejorEntre(myRecData[mesKey],               friendRecData[mesKey]),
+      abs: mejorEntre(myRecData[juego.id + '_allTime'], friendRecData[juego.id + '_allTime']),
+    };
+  }
 
   renderRecords(records);
 }
@@ -766,10 +805,6 @@ function renderRecords(records) {
     const row = document.createElement('div');
     row.className = 'record-row';
 
-    const fmt = (r) => {
-      if (!r) return '—';
-      return juego.id === 'cuordle' ? r.val + ' int.' : r.val;
-    };
     const mesColor = rec.mes ? (rec.mes.isMe ? myColor : currentFriendColor) : '#ccc';
     const absColor = rec.abs ? (rec.abs.isMe ? myColor : currentFriendColor) : '#ccc';
 
@@ -778,8 +813,8 @@ function renderRecords(records) {
         <img class="history-legend-icon" src="${juego.icon}" alt="${juego.label}">
         <span class="record-game-name">${juego.label}</span>
       </div>
-      <span class="record-val" style="color:${mesColor}">${fmt(rec.mes)}</span>
-      <span class="record-val" style="color:${absColor}">${fmt(rec.abs)}</span>`;
+      <span class="record-val" style="color:${mesColor}">${formatRecord(rec.mes?.val, juego.id)}</span>
+      <span class="record-val" style="color:${absColor}">${formatRecord(rec.abs?.val, juego.id)}</span>`;
     lista.appendChild(row);
   }
 }
@@ -1100,12 +1135,38 @@ async function leerResultado() {
 // ALMACENAMIENTO — Firestore
 // =============================================
 
+async function actualizarRecords(uid, campos, fecha) {
+  const recRef  = doc(db, 'records', uid);
+  const recSnap = await getDoc(recRef);
+  const existing = recSnap.exists() ? recSnap.data() : {};
+  const mes = fecha.slice(0, 7);
+  const updates = {};
+
+  for (const juego of JUEGOS) {
+    const val = campos[juego.id] ?? null;
+    if (!val) continue;
+    const ms = timeToMs(val);
+    if (ms === Infinity) continue;
+
+    const allTimeKey = juego.id + '_allTime';
+    if (!existing[allTimeKey] || ms < timeToMs(existing[allTimeKey])) updates[allTimeKey] = val;
+
+    const mesKey = juego.id + '_' + mes;
+    if (!existing[mesKey] || ms < timeToMs(existing[mesKey])) updates[mesKey] = val;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await setDoc(recRef, updates, { merge: true });
+  }
+}
+
 async function guardar(campos) {
   const user = auth.currentUser;
   if (!user) { console.warn('guardar: sin usuario autenticado'); return; }
 
   const hoy = fechaHoy();
   await setDoc(doc(db, 'results', `${user.uid}_${hoy}`), campos, { merge: true });
+  await actualizarRecords(user.uid, campos, hoy);
 
   if (currentFriend) await cargarReto(user.uid, currentFriend.uid);
 }
