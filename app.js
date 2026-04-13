@@ -41,7 +41,7 @@ const JUEGOS = [
   { id: 'sumplete',       label: 'Sumplete',       icon: 'icons/sumplete.png', url: 'https://sumplete.com/daily' },
   { id: 'shikaku_easy',   label: 'Shikaku Easy',   icon: 'icons/shikaku_easy.png',   url: 'https://shikakuofthe.day/' },
   { id: 'shikaku_medium', label: 'Shikaku Medium',  icon: 'icons/shikaku_medium.png', url: 'https://shikakuofthe.day/' },
-  { id: 'cinco',          label: 'Cinco',           icon: 'icons/cinco.png',          url: 'https://puzzlepass.io/cinco/' },
+  { id: 'cinco',          label: 'Cincoku',         icon: 'icons/cinco.png',          url: 'https://jegomei.github.io/Cincoku/' },
   { id: 'cuordle',        label: 'Cuordle',         icon: 'icons/cuordle.png',        url: 'https://jegomei.github.io/Cuordle/' },
 ];
 
@@ -1102,9 +1102,10 @@ if (texto.includes('#Sumplete') || texto.includes('#sumplete')) {
       }
     }
 
-    // --- CINCO ---
-    if (texto.includes('Cinco of the day')) {
-      const match = texto.match(/took me (\d{2}:\d{2})/);
+    // --- CINCO / CINCOKU ---
+    if (texto.includes('Cincoku') || texto.includes('Cinco of the day')) {
+      // Intenta coincidir con el nuevo formato o el antiguo
+      const match = texto.match(/en (\d{2}:\d{2}) segundos/) || texto.match(/took me (\d{2}:\d{2})/);
       if (match) {
         await guardar({ cinco: match[1] });
         mostrar(`Cinco → ${match[1]} ✓`);
